@@ -66,28 +66,26 @@ def run_system_evaluation():
     print("EVALUATION SUMMARY")
     print("=" * 80)
     print(f"Total Requests Processed: {summary['total_orders']}")
-    print(f"  ✅ Fulfilled: {summary['fulfilled']}")
-    print(f"  ❌ Unfulfilled: {summary['unfulfilled']}")
-    print(
-        f"  📊 Success Rate: {(summary['fulfilled']/summary['total_orders']*100):.1f}%"
-    )
-    print(f"\n💰 Total Revenue Generated: ${summary['total_revenue']:.2f}")
+    print(f"  [OK] Fulfilled: {summary['fulfilled']}")
+    print(f"  [FAIL] Unfulfilled: {summary['unfulfilled']}")
+    print(f"  Success Rate: {(summary['fulfilled']/summary['total_orders']*100):.1f}%")
+    print(f"\nTotal Revenue Generated: ${summary['total_revenue']:.2f}")
 
     # Final financial report
     final_report = generate_financial_report()
-    print(f"\n📈 Final Financial Report:")
+    print(f"\nFinal Financial Report:")
     print(f"   Current Cash Balance: ${final_report['current_cash_balance']:.2f}")
     print(f"   Total Sales Value: ${final_report['total_sales']:.2f}")
     print(f"   Transactions Recorded: {final_report['transaction_count']}")
 
-    print("\n✅ Test results saved to test_results.csv")
+    print("\n[OK] Test results saved to test_results.csv")
 
     # Generate workflow diagram showing agent-to-agent communication
-    print("\n📊 Generating workflow diagram showing multi-agent orchestration...")
+    print("\nGenerating workflow diagram showing multi-agent orchestration...")
     try:
         generate_workflow_diagram("workflow_diagram.png")
     except Exception as e:
-        print(f"⚠️  Warning: Could not generate diagram: {e}")
+        print(f"[WARN] Warning: Could not generate diagram: {e}")
 
     print("=" * 80 + "\n")
 
@@ -101,6 +99,7 @@ def generate_test_results(summary: dict, requests_df: pd.DataFrame):
     results_data = []
 
     for order in summary["orders"]:
+        customer_response = order.get("customer_response", {})
         result_row = {
             "order_id": order.get("order_id"),
             "status": order.get("final_status"),
@@ -115,6 +114,8 @@ def generate_test_results(summary: dict, requests_df: pd.DataFrame):
             "customer_request_preview": order.get("customer_request", "")[:100],
             "requested_items": str(order.get("requested_items", {})),
             "timestamp": order.get("timestamp"),
+            "customer_response_status": customer_response.get("status", ""),
+            "customer_response_reason": customer_response.get("reason", ""),
         }
         results_data.append(result_row)
 

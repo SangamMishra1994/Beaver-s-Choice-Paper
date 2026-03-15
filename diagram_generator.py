@@ -184,9 +184,9 @@ def generate_workflow_diagram(output_file="workflow_diagram.png"):
     # ========== AGENT TOOLS (Under each agent) ==========
     # Inventory Tools
     inv_tools = FancyBboxPatch(
-        (0.2, 2.3),
+        (0.2, 2.0),
         2.4,
-        0.9,
+        1.1,
         boxstyle="round,pad=0.05",
         edgecolor="black",
         facecolor=color_tool,
@@ -194,21 +194,28 @@ def generate_workflow_diagram(output_file="workflow_diagram.png"):
         linestyle="--",
     )
     ax.add_patch(inv_tools)
-    ax.text(1.4, 2.85, "Tools:", fontsize=9, ha="center", fontweight="bold")
     ax.text(
         1.4,
-        2.5,
-        "• check_inventory_stock()\n• get_complete_inventory()",
-        fontsize=8,
+        2.95,
+        "Tools & Helper Functions:",
+        fontsize=9,
+        ha="center",
+        fontweight="bold",
+    )
+    ax.text(
+        1.4,
+        2.55,
+        "check_inventory_stock()\n→ get_stock_level()\n\nget_complete_inventory()\n→ get_all_inventory()",
+        fontsize=7.5,
         ha="center",
         va="center",
     )
 
     # Quote Tools
     quote_tools = FancyBboxPatch(
-        (7.4, 2.3),
+        (7.4, 2.0),
         2.4,
-        0.9,
+        1.1,
         boxstyle="round,pad=0.05",
         edgecolor="black",
         facecolor=color_tool,
@@ -216,16 +223,28 @@ def generate_workflow_diagram(output_file="workflow_diagram.png"):
         linestyle="--",
     )
     ax.add_patch(quote_tools)
-    ax.text(8.6, 2.85, "Tools:", fontsize=9, ha="center", fontweight="bold")
     ax.text(
-        8.6, 2.5, "• lookup_historical_quotes()", fontsize=8, ha="center", va="center"
+        8.6,
+        2.95,
+        "Tools & Helper Functions:",
+        fontsize=9,
+        ha="center",
+        fontweight="bold",
+    )
+    ax.text(
+        8.6,
+        2.55,
+        "lookup_historical_quotes()\n→ search_quote_history()",
+        fontsize=7.5,
+        ha="center",
+        va="center",
     )
 
     # Finance Tools
     fin_tools = FancyBboxPatch(
-        (0.2, 0.8),
+        (0.2, 0.5),
         2.4,
-        0.9,
+        1.1,
         boxstyle="round,pad=0.05",
         edgecolor="black",
         facecolor=color_tool,
@@ -233,14 +252,28 @@ def generate_workflow_diagram(output_file="workflow_diagram.png"):
         linestyle="--",
     )
     ax.add_patch(fin_tools)
-    ax.text(1.4, 1.35, "Tools:", fontsize=9, ha="center", fontweight="bold")
-    ax.text(1.4, 1.05, "• check_company_cash()", fontsize=8, ha="center", va="center")
+    ax.text(
+        1.4,
+        1.45,
+        "Tools & Helper Functions:",
+        fontsize=9,
+        ha="center",
+        fontweight="bold",
+    )
+    ax.text(
+        1.4,
+        1.05,
+        "check_company_cash()\n→ get_cash_balance()\n\ngenerate_finance_report()\n→ generate_financial_report()",
+        fontsize=7.5,
+        ha="center",
+        va="center",
+    )
 
     # Sales Tools
     sales_tools = FancyBboxPatch(
-        (7.4, 0.8),
+        (7.4, 0.5),
         2.4,
-        0.9,
+        1.1,
         boxstyle="round,pad=0.05",
         edgecolor="black",
         facecolor=color_tool,
@@ -248,8 +281,22 @@ def generate_workflow_diagram(output_file="workflow_diagram.png"):
         linestyle="--",
     )
     ax.add_patch(sales_tools)
-    ax.text(8.6, 1.35, "Tools:", fontsize=9, ha="center", fontweight="bold")
-    ax.text(8.6, 1.05, "• record_transaction()", fontsize=8, ha="center", va="center")
+    ax.text(
+        8.6,
+        1.45,
+        "Tools & Helper Functions:",
+        fontsize=9,
+        ha="center",
+        fontweight="bold",
+    )
+    ax.text(
+        8.6,
+        1.05,
+        "record_transaction()\n→ create_transaction()\n\nupdate_inventory_after_sale()\n→ reduce_inventory()",
+        fontsize=7.5,
+        ha="center",
+        va="center",
+    )
 
     # ========== WORKFLOW ARROWS (Orchestrator calling agents) ==========
     # Input to Orchestrator
@@ -290,6 +337,9 @@ def generate_workflow_diagram(output_file="workflow_diagram.png"):
         ha="center",
         bbox=dict(boxstyle="round", facecolor="lightyellow", alpha=0.7),
     )
+    # I/O labels
+    ax.text(3.2, 7.3, "↓ requested_items", fontsize=7, ha="left", style="italic")
+    ax.text(3.0, 6.5, "↑ can_fulfill", fontsize=7, ha="left", style="italic")
 
     # Orchestrator to Quoting (with label)
     arrow_orch_quote = FancyArrowPatch(
@@ -310,6 +360,9 @@ def generate_workflow_diagram(output_file="workflow_diagram.png"):
         ha="center",
         bbox=dict(boxstyle="round", facecolor="lightyellow", alpha=0.7),
     )
+    # I/O labels
+    ax.text(6.2, 7.3, "↓ items, request", fontsize=7, ha="right", style="italic")
+    ax.text(7.0, 6.5, "↑ quote_amt", fontsize=7, ha="right", style="italic")
 
     # Orchestrator to Finance (with label)
     arrow_orch_fin = FancyArrowPatch(
@@ -330,6 +383,9 @@ def generate_workflow_diagram(output_file="workflow_diagram.png"):
         ha="center",
         bbox=dict(boxstyle="round", facecolor="lightyellow", alpha=0.7),
     )
+    # I/O labels
+    ax.text(3.2, 5.8, "↓ quote_amt", fontsize=7, ha="left", style="italic")
+    ax.text(3.0, 4.9, "↑ approved", fontsize=7, ha="left", style="italic")
 
     # Orchestrator to Sales (with label)
     arrow_orch_sales = FancyArrowPatch(
@@ -350,9 +406,12 @@ def generate_workflow_diagram(output_file="workflow_diagram.png"):
         ha="center",
         bbox=dict(boxstyle="round", facecolor="lightyellow", alpha=0.7),
     )
+    # I/O labels
+    ax.text(6.2, 5.8, "↓ order_id, items", fontsize=7, ha="right", style="italic")
+    ax.text(7.0, 4.9, "↑ success", fontsize=7, ha="right", style="italic")
 
     # Agents to their Tools (downward arrows)
-    for agent_pos, tool_y in [(1.4, 3.2), (8.6, 3.2), (1.4, 1.7), (8.6, 1.7)]:
+    for agent_pos, tool_y in [(1.4, 3.1), (8.6, 3.1), (1.4, 1.6), (8.6, 1.6)]:
         arrow = FancyArrowPatch(
             (agent_pos, tool_y + 0.2),
             (agent_pos, tool_y),
@@ -457,7 +516,7 @@ def generate_workflow_diagram(output_file="workflow_diagram.png"):
 
     plt.tight_layout()
     plt.savefig(output_file, dpi=300, bbox_inches="tight", facecolor="white")
-    print(f"✅ Workflow diagram generated: {output_file}")
+    print(f"[OK] Workflow diagram generated: {output_file}")
     plt.close()
 
 

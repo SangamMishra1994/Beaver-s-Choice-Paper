@@ -80,11 +80,13 @@ class OrchestratorAgent:
         """Parse inventory agent response to extract decision."""
         # Handle both string and object responses
         response_text = str(response).lower()
+        # Check for can_fulfill or decision decision in response
         can_fulfill = (
             "can_fulfill" in response_text
+            or "CAN_FULFILL" in str(response)
             or "can fulfill" in response_text
             or "fulfilled" in response_text
-            or "yes" in response_text
+            or ("yes" in response_text and "cannot" not in response_text)
         )
 
         return {"can_fulfill": can_fulfill, "response": str(response)}
@@ -164,28 +166,48 @@ Check if we can fulfill this order using your available tools.
         try:
             inventory_response = self.inventory_agent.run_sync(inventory_prompt)
             # Handle both direct string and agent response object
-            response_data = (
-                inventory_response.data
-                if hasattr(inventory_response, "data")
-                else inventory_response
-            )
-            inventory_result = self.parse_inventory_decision(str(response_data))
+            if (
+                isinstance(inventory_response, dict)
+                and "can_fulfill" in inventory_response
+            ):
+                # Direct dict response from agent
+                can_fulfill = inventory_response.get("can_fulfill", False)
+                inventory_result = inventory_response
+            else:
+                response_data = (
+                    inventory_response.data
+                    if hasattr(inventory_response, "data")
+                    else inventory_response
+                )
+                inventory_result = self.parse_inventory_decision(str(response_data))
+                can_fulfill = inventory_result.get("can_fulfill", False)
+
             result["stages"]["inventory"] = inventory_result
             print(
-                f"Inventory Decision: {'✅ CAN FULFILL' if inventory_result['can_fulfill'] else '❌ CANNOT FULFILL'}"
+                f"Inventory Decision: {'[OK] CAN FULFILL' if can_fulfill else '[FAIL] CANNOT FULFILL'}"
             )
 
-            if not inventory_result["can_fulfill"]:
+            if not can_fulfill:
                 result["final_status"] = "UNFULFILLED"
                 result["reason"] = "Insufficient inventory"
-                print(f"❌ Order cannot be fulfilled - insufficient inventory\n")
+                result["customer_response"] = {
+                    "status": "REJECTED",
+                    "reason": "We apologize, but we do not currently have sufficient inventory to fulfill your order. Our available stock is limited.",
+                    "quote_amount": None,
+                }
+                print(f"[FAIL] Order cannot be fulfilled - insufficient inventory\n")
                 self.results.append(result)
                 return result
         except Exception as e:
-            print(f"⚠️  Inventory check error: {e}")
+            print(f"[WARN] Inventory check error: {e}")
             result["stages"]["inventory"] = {"can_fulfill": False, "error": str(e)}
             result["final_status"] = "UNFULFILLED"
             result["reason"] = "Inventory check failed"
+            result["customer_response"] = {
+                "status": "REJECTED",
+                "reason": "We encountered a system error while processing your inventory request. Please try again later.",
+                "quote_amount": None,
+            }
             self.results.append(result)
             return result
 
@@ -212,9 +234,9 @@ Provide the total quote amount and brief pricing breakdown.
             if quote_result["quote_amount"] is None:
                 quote_result["quote_amount"] = self.estimate_quote(requested_items)
 
-            print(f"Quote Generated: 💰 ${quote_result['quote_amount']:.2f}")
+            print(f"Quote Generated: ${quote_result['quote_amount']:.2f}")
         except Exception as e:
-            print(f"⚠️  Quote generation error: {e}")
+            print(f"[WARN] Quote generation error: {e}")
             quote_result = {"quote_amount": self.estimate_quote(requested_items)}
             result["stages"]["quoting"] = quote_result
             print(f"Quote Generated (fallback): ${quote_result['quote_amount']:.2f}")
@@ -230,28 +252,46 @@ Check if company can financially support this order. Use your tools to verify ca
 """
         try:
             finance_response = self.finance_agent.run_sync(finance_prompt)
-            response_data = (
-                finance_response.data
-                if hasattr(finance_response, "data")
-                else finance_response
-            )
-            finance_result = self.parse_finance_decision(str(response_data))
+            # Handle both direct dict and agent response object
+            if isinstance(finance_response, dict) and "approved" in finance_response:
+                # Direct dict response from agent
+                approved = finance_response.get("approved", False)
+                finance_result = finance_response
+            else:
+                response_data = (
+                    finance_response.data
+                    if hasattr(finance_response, "data")
+                    else finance_response
+                )
+                finance_result = self.parse_finance_decision(str(response_data))
+                approved = finance_result.get("approved", False)
+
             result["stages"]["finance"] = finance_result
             print(
-                f"Finance Decision: {'✅ APPROVED' if finance_result['approved'] else '❌ REJECTED'}"
+                f"Finance Decision: {'[OK] APPROVED' if approved else '[FAIL] REJECTED'}"
             )
 
-            if not finance_result["approved"]:
+            if not approved:
                 result["final_status"] = "UNFULFILLED"
                 result["reason"] = "Insufficient funds"
-                print(f"❌ Order cannot be fulfilled - insufficient funds\n")
+                result["customer_response"] = {
+                    "status": "REJECTED",
+                    "reason": f"We cannot fulfill your order at this time due to financial constraints. The quoted amount of ${quote_result['quote_amount']:.2f} exceeds our available budget.",
+                    "quote_amount": None,
+                }
+                print(f"[FAIL] Order cannot be fulfilled - insufficient funds\n")
                 self.results.append(result)
                 return result
         except Exception as e:
-            print(f"⚠️  Finance check error: {e}")
+            print(f"[WARN] Finance check error: {e}")
             result["stages"]["finance"] = {"approved": False, "error": str(e)}
             result["final_status"] = "UNFULFILLED"
             result["reason"] = "Finance check failed"
+            result["customer_response"] = {
+                "status": "REJECTED",
+                "reason": "We encountered an error processing your financial check. Please contact support.",
+                "quote_amount": None,
+            }
             self.results.append(result)
             return result
 
@@ -266,21 +306,50 @@ Finalize this sale by recording the transaction and updating inventory.
 """
         try:
             sales_response = self.sales_agent.run_sync(sales_prompt)
-            response_data = (
-                sales_response.data
-                if hasattr(sales_response, "data")
-                else sales_response
-            )
-            sales_result = {"response": str(response_data), "success": True}
-            result["stages"]["sales"] = sales_result
-            result["final_status"] = "FULFILLED"
-            result["quote_amount"] = quote_result["quote_amount"]
-            print(f"✅ Order confirmed and processed!")
+            # Handle both direct dict and agent response object
+            if isinstance(sales_response, dict) and "order_finalized" in sales_response:
+                # Direct dict response from agent
+                order_finalized = sales_response.get("order_finalized", False)
+                sales_result = sales_response
+            else:
+                response_data = (
+                    sales_response.data
+                    if hasattr(sales_response, "data")
+                    else sales_response
+                )
+                sales_result = {"response": str(response_data), "success": True}
+                order_finalized = True
+
+            if order_finalized or sales_result.get("success", True):
+                result["stages"]["sales"] = sales_result
+                result["final_status"] = "FULFILLED"
+                result["quote_amount"] = quote_result["quote_amount"]
+                result["customer_response"] = {
+                    "status": "APPROVED",
+                    "reason": f"Your order has been successfully processed. Total quote: ${quote_result['quote_amount']:.2f}",
+                    "quote_amount": quote_result["quote_amount"],
+                    "delivery_note": "Your items will be shipped within 2-3 business days.",
+                }
+                print(f"[OK] Order confirmed and processed!")
+            else:
+                result["stages"]["sales"] = sales_result
+                result["final_status"] = "UNFULFILLED"
+                result["reason"] = "Sales processing failed"
+                result["customer_response"] = {
+                    "status": "REJECTED",
+                    "reason": "We encountered an error finalizing your order. Please contact support.",
+                    "quote_amount": None,
+                }
         except Exception as e:
-            print(f"⚠️  Sales finalization error: {e}")
+            print(f"[WARN] Sales finalization error: {e}")
             result["stages"]["sales"] = {"success": False, "error": str(e)}
             result["final_status"] = "UNFULFILLED"
             result["reason"] = "Sales processing failed"
+            result["customer_response"] = {
+                "status": "REJECTED",
+                "reason": "We encountered an error processing your order. Please try again later.",
+                "quote_amount": None,
+            }
 
         print(f"\n{'='*80}\n")
         self.results.append(result)

@@ -149,25 +149,80 @@ class InventoryAgent:
     def run_sync(self, prompt):
         """Check inventory availability for requested items."""
         try:
+            # Extract requested items from prompt - parse JSON dict
+            import json
+            import re
+
+            # Try to find requested_items JSON in the prompt
+            json_match = re.search(
+                r"\{[^}]*(?:item|quantity)[^}]*\}", prompt, re.DOTALL
+            )
+            requested_items = {}
+
+            if json_match:
+                try:
+                    requested_items = json.loads(json_match.group())
+                except:
+                    pass
+
+            # If we couldn't parse, try to extract from the prompt more broadly
+            if not requested_items:
+                # Try to extract from "requested the following items:" pattern
+                items_match = re.search(
+                    r"requested.*?items:?\s*\{[^}]+\}",
+                    prompt,
+                    re.IGNORECASE | re.DOTALL,
+                )
+                if items_match:
+                    try:
+                        requested_items = json.loads(
+                            re.search(r"\{[^}]+\}", items_match.group()).group()
+                        )
+                    except:
+                        pass
+
+            # Get current inventory
             inventory = get_complete_inventory()
-            if inventory and inventory.get("total_items", 0) > 0:
-                return {
-                    "status": "success",
-                    "decision": "CAN_FULFILL",
-                    "inventory": inventory,
-                    "response": f"Inventory check complete. {inventory.get('total_items', 0)} items in stock.",
-                }
+            inventory_snapshot = inventory.get("inventory_snapshot", {})
+
+            # Check if all requested items are available in requested quantities
+            can_fulfill = True
+            unfulfilled_items = []
+
+            if requested_items:
+                for item, requested_qty in requested_items.items():
+                    available_qty = inventory_snapshot.get(item, 0)
+                    if available_qty < requested_qty:
+                        can_fulfill = False
+                        unfulfilled_items.append(
+                            f"{item} (requested: {requested_qty}, available: {available_qty})"
+                        )
+
+            decision = "CAN_FULFILL" if can_fulfill else "CANNOT_FULFILL"
+            response_msg = (
+                f"Inventory check complete. "
+                if can_fulfill
+                else f"Inventory insufficient. "
+            )
+
+            if unfulfilled_items:
+                response_msg += f"Cannot fulfill: {', '.join(unfulfilled_items)}"
             else:
-                return {
-                    "status": "success",
-                    "decision": "CANNOT_FULFILL",
-                    "inventory": inventory,
-                    "response": "Insufficient inventory available.",
-                }
+                response_msg += f"All {len(requested_items)} items available in sufficient quantities."
+
+            return {
+                "status": "success",
+                "decision": decision,
+                "can_fulfill": can_fulfill,
+                "inventory": inventory,
+                "response": response_msg,
+                "unfulfilled_items": unfulfilled_items,
+            }
         except Exception as e:
             return {
                 "status": "error",
                 "decision": "CANNOT_FULFILL",
+                "can_fulfill": False,
                 "response": f"Inventory check failed: {str(e)}",
             }
 
@@ -218,13 +273,36 @@ class FinanceAgent:
     def run_sync(self, prompt):
         """Verify financial feasibility of order."""
         try:
+            import re
+
+            # Extract quote amount from prompt
+            amount_match = re.search(r"\$(\d+(?:\.\d{2})?)", prompt)
+            quote_amount = 0
+            if amount_match:
+                quote_amount = float(amount_match.group(1))
+
             cash_balance = get_cash_balance()
-            # Assume any quote less than half the balance is approvable
+
+            # Approved if we have enough cash to pay for the order
+            # (In a real scenario, this would be cost of goods/fulfillment cost)
+            approved = cash_balance >= quote_amount
+
+            response_msg = (
+                f"Finance check complete. Available cash: ${cash_balance:.2f}. "
+            )
+            if approved:
+                response_msg += (
+                    f"Quote amount ${quote_amount:.2f} is within budget. ✓ APPROVED"
+                )
+            else:
+                response_msg += f"Quote amount ${quote_amount:.2f} exceeds available funds. ✗ REJECTED"
+
             return {
                 "status": "success",
-                "approved": cash_balance > 100,
+                "approved": approved,
                 "cash_balance": cash_balance,
-                "response": f"Finance check complete. Available: ${cash_balance:.2f}",
+                "quote_amount": quote_amount,
+                "response": response_msg,
             }
         except Exception as e:
             return {
@@ -248,10 +326,47 @@ class SalesAgent:
     def run_sync(self, prompt):
         """Process and finalize completed order."""
         try:
+            import json
+            import re
+
+            # Extract order_id from prompt
+            order_id_match = re.search(r"Order (\w+-\w+)", prompt)
+            order_id = order_id_match.group(1) if order_id_match else "ORD-UNKNOWN"
+
+            # Extract quote amount from prompt
+            amount_match = re.search(r"\$(\d+(?:\.\d{2})?)", prompt)
+            quote_amount = 0
+            if amount_match:
+                quote_amount = float(amount_match.group(1))
+
+            # Extract items dict from prompt
+            items_match = re.search(r"Items:?\s*(\{[^}]+\})", prompt, re.IGNORECASE)
+            requested_items = {}
+            if items_match:
+                try:
+                    requested_items = json.loads(items_match.group(1))
+                except:
+                    pass
+
+            # Record transaction
+            transaction_recorded = record_transaction(order_id, quote_amount)
+
+            # Update inventory
+            inventory_updated = update_inventory_after_sale(requested_items)
+
+            response_msg = f"Order {order_id} finalized successfully. "
+            if transaction_recorded.get("recorded"):
+                response_msg += f"Transaction ${quote_amount:.2f} recorded. "
+            if inventory_updated.get("inventory_updated"):
+                response_msg += f"Inventory reduced by {inventory_updated.get('items_removed')} units."
+
             return {
                 "status": "success",
                 "order_finalized": True,
-                "response": "Order processed and recorded successfully.",
+                "order_id": order_id,
+                "transaction_recorded": transaction_recorded.get("recorded", False),
+                "inventory_updated": inventory_updated.get("inventory_updated", False),
+                "response": response_msg,
             }
         except Exception as e:
             return {

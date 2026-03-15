@@ -64,24 +64,44 @@ def initialize_inventory():
         if not items:
             default_items = [
                 Inventory(
-                    item="A4 paper", quantity=5000, supplier_delivery_date="2025-04-15"
+                    item="A4 paper", quantity=2000, supplier_delivery_date="2025-04-15"
                 ),
                 Inventory(
-                    item="cardstock", quantity=2000, supplier_delivery_date="2025-04-15"
+                    item="cardstock", quantity=1500, supplier_delivery_date="2025-04-15"
                 ),
                 Inventory(
                     item="colored paper",
-                    quantity=3000,
+                    quantity=1800,
                     supplier_delivery_date="2025-04-15",
                 ),
                 Inventory(
                     item="standard copy paper",
-                    quantity=4000,
+                    quantity=2000,
                     supplier_delivery_date="2025-04-15",
                 ),
                 Inventory(
                     item="letter-sized paper",
-                    quantity=2500,
+                    quantity=1200,
+                    supplier_delivery_date="2025-04-15",
+                ),
+                Inventory(
+                    item="printer paper",
+                    quantity=1600,
+                    supplier_delivery_date="2025-04-15",
+                ),
+                Inventory(
+                    item="glossy paper",
+                    quantity=800,
+                    supplier_delivery_date="2025-04-15",
+                ),
+                Inventory(
+                    item="construction paper",
+                    quantity=600,
+                    supplier_delivery_date="2025-04-15",
+                ),
+                Inventory(
+                    item="poster paper",
+                    quantity=400,
                     supplier_delivery_date="2025-04-15",
                 ),
             ]
@@ -97,7 +117,7 @@ def initialize_cash_balance():
     try:
         balance = session.query(CashBalance).filter_by(id="main").first()
         if not balance:
-            balance = CashBalance(id="main", balance=10000.0)
+            balance = CashBalance(id="main", balance=800.0)
             session.add(balance)
             session.commit()
     finally:
@@ -210,8 +230,13 @@ def create_transaction(order_id: str, amount: float) -> bool:
             if balance.balance < 0:
                 session.rollback()
                 return False  # Insufficient funds
+
+        # Commit the transaction
+        session.commit()
+        return True
     except Exception as e:
         print(f"Error creating transaction: {e}")
+        session.rollback()
         return False
     finally:
         session.close()

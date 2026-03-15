@@ -1,31 +1,31 @@
-order_id,status,reason_if_unfulfilled,quote_amount,inventory_available,finance_approved,customer_request_preview,requested_items,timestamp
+order_id,status,reason_if_unfulfilled,quote_amount,inventory_available,finance_approved,customer_request_preview,requested_items,timestamp,customer_response_status,customer_response_reason
 ORD-001,FULFILLED,,260.0,True,True,"I would like to request the following paper supplies for the ceremony: 
 
-- 200 sheets of A4 glossy p","{'cardstock': 100, 'colored paper': 100, 'glossy paper': 100}",2026-03-14T17:03:23.549850
-ORD-002,FULFILLED,,220.0,True,True,"I would like to place an order for 500 sheets of colorful poster paper, 300 roll of streamers, and 2",{'poster paper': 100},2026-03-14T17:03:23.553602
-ORD-003,FULFILLED,,235.0,True,True,"I need to order 10,000 sheets of A4 paper, 5,000 sheets of A3 paper, and 500 reams of printer paper.",{'printer paper': 500},2026-03-14T17:03:23.556987
-ORD-004,FULFILLED,,220.0,True,True,"I need 500 sheets of high-quality, recycled cardstock in various colors for our reception, along wit","{'cardstock': 100, 'printer paper': 100}",2026-03-14T17:03:23.560801
-ORD-005,FULFILLED,,247.0,True,True,"I would like to place an order for 500 sheets of 8.5""x11"" colored paper, 300 sheets of cardstock in ","{'cardstock': 300, 'colored paper': 100}",2026-03-14T17:03:23.564259
-ORD-006,FULFILLED,,242.0,True,True,"I would like to order 500 sheets of colorful construction paper, 300 sheets of white printer paper, ","{'cardstock': 200, 'printer paper': 100, 'construction paper': 100}",2026-03-14T17:03:23.570110
-ORD-007,FULFILLED,,285.0,True,True,I would like to place a large order for various types of paper supplies for our upcoming exhibition.,{'cardstock': 100},2026-03-14T17:03:23.573739
-ORD-008,FULFILLED,,277.0,True,True,"I would like to place a large order for the following paper supplies for an upcoming ceremony: 
+- 200 sheets of A4 glossy p","{'cardstock': 100, 'colored paper': 100, 'glossy paper': 100}",2026-03-15T11:44:45.064338,APPROVED,Your order has been successfully processed. Total quote: $260.00
+ORD-002,FULFILLED,,220.0,True,True,"I would like to place an order for 500 sheets of colorful poster paper, 300 roll of streamers, and 2",{'poster paper': 100},2026-03-15T11:44:45.876966,APPROVED,Your order has been successfully processed. Total quote: $220.00
+ORD-003,FULFILLED,,235.0,True,True,"I need to order 10,000 sheets of A4 paper, 5,000 sheets of A3 paper, and 500 reams of printer paper.",{'printer paper': 500},2026-03-15T11:44:45.983428,APPROVED,Your order has been successfully processed. Total quote: $235.00
+ORD-004,UNFULFILLED,Insufficient funds,,True,False,"I need 500 sheets of high-quality, recycled cardstock in various colors for our reception, along wit","{'cardstock': 100, 'printer paper': 100}",2026-03-15T11:44:46.085060,REJECTED,We cannot fulfill your order at this time due to financial constraints. The quoted amount of $220.00 exceeds our available budget.
+ORD-005,UNFULFILLED,Insufficient funds,,True,False,"I would like to place an order for 500 sheets of 8.5""x11"" colored paper, 300 sheets of cardstock in ","{'cardstock': 300, 'colored paper': 100}",2026-03-15T11:44:46.097704,REJECTED,We cannot fulfill your order at this time due to financial constraints. The quoted amount of $247.00 exceeds our available budget.
+ORD-006,UNFULFILLED,Insufficient funds,,True,False,"I would like to order 500 sheets of colorful construction paper, 300 sheets of white printer paper, ","{'cardstock': 200, 'printer paper': 100, 'construction paper': 100}",2026-03-15T11:44:46.111341,REJECTED,We cannot fulfill your order at this time due to financial constraints. The quoted amount of $242.00 exceeds our available budget.
+ORD-007,UNFULFILLED,Insufficient funds,,True,False,I would like to place a large order for various types of paper supplies for our upcoming exhibition.,{'cardstock': 100},2026-03-15T11:44:46.122996,REJECTED,We cannot fulfill your order at this time due to financial constraints. The quoted amount of $285.00 exceeds our available budget.
+ORD-008,UNFULFILLED,Insufficient funds,,True,False,"I would like to place a large order for the following paper supplies for an upcoming ceremony: 
 
-- 5","{'colored paper': 100, 'glossy paper': 100}",2026-03-14T17:03:23.577314
-ORD-009,FULFILLED,,267.0,True,True,"I would like to place an order for the following paper supplies for the reception: 
+- 5","{'colored paper': 100, 'glossy paper': 100}",2026-03-15T11:44:46.135723,REJECTED,We cannot fulfill your order at this time due to financial constraints. The quoted amount of $277.00 exceeds our available budget.
+ORD-009,UNFULFILLED,Insufficient funds,,True,False,"I would like to place an order for the following paper supplies for the reception: 
 
-- 200 sheets of","{'printer paper': 100, 'glossy paper': 100}",2026-03-14T17:03:23.582364
-ORD-010,FULFILLED,,222.0,True,True,I would like to place an order for 500 sheets of high-quality glossy paper and 300 sheets of sturdy ,"{'cardstock': 100, 'glossy paper': 100}",2026-03-14T17:03:23.585544
-ORD-011,FULFILLED,,212.0,True,True,I would like to order 500 sheets of A3 glossy paper and 300 sheets of A4 matte paper for our exhibit,{'glossy paper': 100},2026-03-14T17:03:23.588936
-ORD-012,FULFILLED,,220.0,True,True,"I would like to order 200 sheets of colorful cardstock, 500 sheets of standard printer paper, and 10","{'cardstock': 100, 'printer paper': 100}",2026-03-14T17:03:23.592396
-ORD-013,FULFILLED,,202.0,True,True,I would like to order 500 sheets of A4 printing paper and 200 sheets of cardstock for our upcoming g,{'cardstock': 200},2026-03-14T17:03:23.597396
-ORD-014,FULFILLED,,255.0,True,True,I would like to place a large order for high-quality paper supplies for our upcoming performance. We,"{'cardstock': 500, 'poster paper': 0}",2026-03-14T17:03:23.600809
-ORD-015,FULFILLED,,270.0,True,True,I would like to place a large order for high-quality paper supplies for our upcoming demonstration. ,{'colored paper': 100},2026-03-14T17:03:23.604139
-ORD-016,FULFILLED,,245.0,True,True,"I would like to place an order for 500 sheets of A4 printer paper, 200 sheets of colorful constructi","{'printer paper': 100, 'construction paper': 100}",2026-03-14T17:03:23.607208
-ORD-017,FULFILLED,,292.0,True,True,"I would like to place a medium order for the following paper supplies for our upcoming reception:
+- 200 sheets of","{'printer paper': 100, 'glossy paper': 100}",2026-03-15T11:44:46.148858,REJECTED,We cannot fulfill your order at this time due to financial constraints. The quoted amount of $267.00 exceeds our available budget.
+ORD-010,UNFULFILLED,Insufficient funds,,True,False,I would like to place an order for 500 sheets of high-quality glossy paper and 300 sheets of sturdy ,"{'cardstock': 100, 'glossy paper': 100}",2026-03-15T11:44:46.163390,REJECTED,We cannot fulfill your order at this time due to financial constraints. The quoted amount of $222.00 exceeds our available budget.
+ORD-011,UNFULFILLED,Insufficient funds,,True,False,I would like to order 500 sheets of A3 glossy paper and 300 sheets of A4 matte paper for our exhibit,{'glossy paper': 100},2026-03-15T11:44:46.174397,REJECTED,We cannot fulfill your order at this time due to financial constraints. The quoted amount of $212.00 exceeds our available budget.
+ORD-012,UNFULFILLED,Insufficient funds,,True,False,"I would like to order 200 sheets of colorful cardstock, 500 sheets of standard printer paper, and 10","{'cardstock': 100, 'printer paper': 100}",2026-03-15T11:44:46.187256,REJECTED,We cannot fulfill your order at this time due to financial constraints. The quoted amount of $220.00 exceeds our available budget.
+ORD-013,UNFULFILLED,Insufficient funds,,True,False,I would like to order 500 sheets of A4 printing paper and 200 sheets of cardstock for our upcoming g,{'cardstock': 200},2026-03-15T11:44:46.200189,REJECTED,We cannot fulfill your order at this time due to financial constraints. The quoted amount of $202.00 exceeds our available budget.
+ORD-014,UNFULFILLED,Insufficient funds,,True,False,I would like to place a large order for high-quality paper supplies for our upcoming performance. We,"{'cardstock': 500, 'poster paper': 0}",2026-03-15T11:44:46.213101,REJECTED,We cannot fulfill your order at this time due to financial constraints. The quoted amount of $255.00 exceeds our available budget.
+ORD-015,UNFULFILLED,Insufficient funds,,True,False,I would like to place a large order for high-quality paper supplies for our upcoming demonstration. ,{'colored paper': 100},2026-03-15T11:44:46.223908,REJECTED,We cannot fulfill your order at this time due to financial constraints. The quoted amount of $270.00 exceeds our available budget.
+ORD-016,UNFULFILLED,Insufficient funds,,True,False,"I would like to place an order for 500 sheets of A4 printer paper, 200 sheets of colorful constructi","{'printer paper': 100, 'construction paper': 100}",2026-03-15T11:44:46.235208,REJECTED,We cannot fulfill your order at this time due to financial constraints. The quoted amount of $245.00 exceeds our available budget.
+ORD-017,UNFULFILLED,Insufficient funds,,True,False,"I would like to place a medium order for the following paper supplies for our upcoming reception:
 
--","{'colored paper': 100, 'printer paper': 100}",2026-03-14T17:03:23.611188
-ORD-018,FULFILLED,,257.0,True,True,I would like to place a medium order for the following paper supplies for our upcoming ceremony: 500,"{'cardstock': 100, 'colored paper': 200}",2026-03-14T17:03:23.615701
-ORD-019,FULFILLED,,270.0,True,True,"Dear [Manufacturer's Name],
+-","{'colored paper': 100, 'printer paper': 100}",2026-03-15T11:44:46.247330,REJECTED,We cannot fulfill your order at this time due to financial constraints. The quoted amount of $292.00 exceeds our available budget.
+ORD-018,UNFULFILLED,Insufficient funds,,True,False,I would like to place a medium order for the following paper supplies for our upcoming ceremony: 500,"{'cardstock': 100, 'colored paper': 200}",2026-03-15T11:44:46.259948,REJECTED,We cannot fulfill your order at this time due to financial constraints. The quoted amount of $257.00 exceeds our available budget.
+ORD-019,UNFULFILLED,Insufficient funds,,True,False,"Dear [Manufacturer's Name],
 
-I would like to place an order for the following paper supplies for our","{'cardstock': 1000, 'glossy paper': 100}",2026-03-14T17:03:23.618739
-ORD-020,FULFILLED,,242.0,True,True,"I would like to place a large order for the following paper supplies for our upcoming concert: 5,000",{'A4 paper': 500},2026-03-14T17:03:23.622105
+I would like to place an order for the following paper supplies for our","{'cardstock': 1000, 'glossy paper': 100}",2026-03-15T11:44:46.271295,REJECTED,We cannot fulfill your order at this time due to financial constraints. The quoted amount of $270.00 exceeds our available budget.
+ORD-020,UNFULFILLED,Insufficient funds,,True,False,"I would like to place a large order for the following paper supplies for our upcoming concert: 5,000",{'A4 paper': 500},2026-03-15T11:44:46.283844,REJECTED,We cannot fulfill your order at this time due to financial constraints. The quoted amount of $242.00 exceeds our available budget.

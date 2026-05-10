@@ -203,13 +203,13 @@ def get_cash_balance() -> float:
 def create_transaction(order_id: str, amount: float) -> bool:
     """
     Record a transaction and update cash balance.
-    Deducts the amount from company balance (payment received).
+    Adds the amount to company balance (payment received from customer).
 
     Args:
         order_id: The order ID
         amount: The amount of the transaction
 
-        Returns:
+    Returns:
         True if transaction was recorded successfully
     """
     session = get_session()
@@ -222,15 +222,11 @@ def create_transaction(order_id: str, amount: float) -> bool:
         )
         session.add(transaction)
 
-        # Update cash balance - DEDUCT the cost of goods/fulfilled order
+        # Update cash balance - ADD the payment received from customer
         balance = session.query(CashBalance).filter_by(id="main").first()
         if balance:
-            # Deduct from balance since we need to pay for inventory/fulfillment
-            balance.balance -= amount
-            if balance.balance < 0:
-                session.rollback()
-                return False  # Insufficient funds
-
+            balance.balance += amount
+        
         # Commit the transaction
         session.commit()
         return True

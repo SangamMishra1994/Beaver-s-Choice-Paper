@@ -264,30 +264,37 @@ START: Customer Request
 
 ---
 
-## 6. Orchestration Framework Choice: pydantic-ai
+## 6. Orchestration Framework Choice: pydantic-ai (v0.4.3)
 
 **Why pydantic-ai?**
 
-- Structured tool definitions with clear contracts
-- Type-safe agent tool integration
-- Synchronous `run_sync()` method for orchestrated workflows
-- Excellent for sequential agent delegation patterns
-- Built-in support for agent instructions and context
+- **Structured Output**: Uses Pydantic models for agent responses (`InventoryResponse`, `QuoteResponse`, etc.), ensuring reliable data flow without fragile regex parsing.
+- **Type-safe Tool Integration**: Tools are defined with clear type hints and automatically validated.
+- **Synchronous Orchestration**: The `run_sync()` method allows for easy sequential delegation between agents.
+- **Model Agnostic**: Easily configured for different providers (OpenAI, Anthropic, etc.) via a unified interface.
 
-**Implementation:**
+**Implementation Detail:**
 
 ```python
-# Agent with tools
-agent = Agent(
-    model="gpt-4o",
-    name="InventoryAgent",
-    tools=[Tool(check_inventory_stock), Tool(get_complete_inventory)],
-    instructions="..."
+# Structured response model
+class InventoryResponse(BaseModel):
+    can_fulfill: bool
+    explanation: str
+    available_items: dict
+    missing_items: list[str]
+
+# Agent with structured output
+inventory_agent = Agent(
+    model="openai:gpt-4o",
+    result_type=InventoryResponse,
+    tools=[...]
 )
 
-# Orchestrated execution
-response = agent.run_sync("Check if we can fulfill this order...")
-result = response.data  # Extract structured result
+# Orchestrator usage
+response = inventory_agent.run_sync("...")
+if response.data.can_fulfill:
+    # Reliable access to fields
+    print(response.data.explanation)
 ```
 
 ---

@@ -156,200 +156,118 @@ class OrchestratorAgent:
 
         # STAGE 1: Inventory Check
         print("\n[STAGE 1] Checking Inventory...")
-        inventory_prompt = f"""
-A customer has requested the following items: {json.dumps(requested_items)}
-
-Request: {request}
-
-Check if we can fulfill this order using your available tools.
-"""
+        inventory_prompt = f"Check if we can fulfill this order for: {json.dumps(requested_items)}"
         try:
             inventory_response = self.inventory_agent.run_sync(inventory_prompt)
-            # Handle both direct string and agent response object
-            if (
-                isinstance(inventory_response, dict)
-                and "can_fulfill" in inventory_response
-            ):
-                # Direct dict response from agent
-                can_fulfill = inventory_response.get("can_fulfill", False)
-                inventory_result = inventory_response
-            else:
-                response_data = (
-                    inventory_response.data
-                    if hasattr(inventory_response, "data")
-                    else inventory_response
-                )
-                inventory_result = self.parse_inventory_decision(str(response_data))
-                can_fulfill = inventory_result.get("can_fulfill", False)
-
+            data = inventory_response.data
+            
+            can_fulfill = data.can_fulfill
+            inventory_result = {
+                "can_fulfill": can_fulfill, 
+                "explanation": data.explanation,
+                "missing_items": data.missing_items
+            }
             result["stages"]["inventory"] = inventory_result
-            print(
-                f"Inventory Decision: {'[OK] CAN FULFILL' if can_fulfill else '[FAIL] CANNOT FULFILL'}"
-            )
+            print(f"Inventory Decision: {'[OK] CAN FULFILL' if can_fulfill else '[FAIL] CANNOT FULFILL'}")
 
             if not can_fulfill:
                 result["final_status"] = "UNFULFILLED"
-                result["reason"] = "Insufficient inventory"
+                result["reason"] = f"Insufficient inventory: {', '.join(data.missing_items)}"
                 result["customer_response"] = {
                     "status": "REJECTED",
-                    "reason": "We apologize, but we do not currently have sufficient inventory to fulfill your order. Our available stock is limited.",
+                    "reason": f"We apologize, but we do not currently have sufficient inventory to fulfill your order. Missing: {', '.join(data.missing_items)}",
                     "quote_amount": None,
                 }
-                print(f"[FAIL] Order cannot be fulfilled - insufficient inventory\n")
                 self.results.append(result)
                 return result
         except Exception as e:
             print(f"[WARN] Inventory check error: {e}")
-            result["stages"]["inventory"] = {"can_fulfill": False, "error": str(e)}
             result["final_status"] = "UNFULFILLED"
             result["reason"] = "Inventory check failed"
-            result["customer_response"] = {
-                "status": "REJECTED",
-                "reason": "We encountered a system error while processing your inventory request. Please try again later.",
-                "quote_amount": None,
-            }
+            result["customer_response"] = {"status": "REJECTED", "reason": f"System error: {str(e)}"}
             self.results.append(result)
             return result
 
         # STAGE 2: Generate Quote
         print("\n[STAGE 2] Generating Quote...")
-        quote_prompt = f"""
-We can fulfill an order for: {json.dumps(requested_items)}
-
-Customer request: {request}
-
-Generate a competitive quote considering bulk discounts (10% for large orders, 5% for medium).
-Provide the total quote amount and brief pricing breakdown.
-"""
+        quote_prompt = f"Generate a quote for: {json.dumps(requested_items)}"
         try:
             quote_response = self.quoting_agent.run_sync(quote_prompt)
-            response_data = (
-                quote_response.data
-                if hasattr(quote_response, "data")
-                else quote_response
-            )
-            quote_result = self.parse_quote_response(str(response_data))
+            data = quote_response.data
+            
+            quote_amount = data.quote_amount
+            quote_result = {
+                "quote_amount": quote_amount,
+                "breakdown": data.breakdown,
+                "applied_discounts": data.applied_discounts
+            }
             result["stages"]["quoting"] = quote_result
-
-            if quote_result["quote_amount"] is None:
-                quote_result["quote_amount"] = self.estimate_quote(requested_items)
-
-            print(f"Quote Generated: ${quote_result['quote_amount']:.2f}")
+            print(f"Quote Generated: ${quote_amount:.2f}")
         except Exception as e:
             print(f"[WARN] Quote generation error: {e}")
-            quote_result = {"quote_amount": self.estimate_quote(requested_items)}
-            result["stages"]["quoting"] = quote_result
-            print(f"Quote Generated (fallback): ${quote_result['quote_amount']:.2f}")
+            quote_amount = self.estimate_quote(requested_items)
+            result["stages"]["quoting"] = {"quote_amount": quote_amount, "error": str(e)}
 
         # STAGE 3: Finance Check
         print("\n[STAGE 3] Checking Finance...")
-        finance_prompt = f"""
-Proposed quote amount: ${quote_result['quote_amount']:.2f}
-
-Order: {json.dumps(requested_items)}
-
-Check if company can financially support this order. Use your tools to verify cash balance and report.
-"""
+        finance_prompt = f"Approve sale for ${quote_amount:.2f}"
         try:
             finance_response = self.finance_agent.run_sync(finance_prompt)
-            # Handle both direct dict and agent response object
-            if isinstance(finance_response, dict) and "approved" in finance_response:
-                # Direct dict response from agent
-                approved = finance_response.get("approved", False)
-                finance_result = finance_response
-            else:
-                response_data = (
-                    finance_response.data
-                    if hasattr(finance_response, "data")
-                    else finance_response
-                )
-                finance_result = self.parse_finance_decision(str(response_data))
-                approved = finance_result.get("approved", False)
-
-            result["stages"]["finance"] = finance_result
-            print(
-                f"Finance Decision: {'[OK] APPROVED' if approved else '[FAIL] REJECTED'}"
-            )
+            data = finance_response.data
+            
+            approved = data.approved
+            result["stages"]["finance"] = {
+                "approved": approved,
+                "cash_balance": data.cash_balance,
+                "explanation": data.explanation
+            }
+            print(f"Finance Decision: {'[OK] APPROVED' if approved else '[FAIL] REJECTED'}")
 
             if not approved:
                 result["final_status"] = "UNFULFILLED"
-                result["reason"] = "Insufficient funds"
+                result["reason"] = "Finance rejection"
                 result["customer_response"] = {
                     "status": "REJECTED",
-                    "reason": f"We cannot fulfill your order at this time due to financial constraints. The quoted amount of ${quote_result['quote_amount']:.2f} exceeds our available budget.",
+                    "reason": "Order rejected due to financial risk assessment.",
                     "quote_amount": None,
                 }
-                print(f"[FAIL] Order cannot be fulfilled - insufficient funds\n")
                 self.results.append(result)
                 return result
         except Exception as e:
             print(f"[WARN] Finance check error: {e}")
-            result["stages"]["finance"] = {"approved": False, "error": str(e)}
             result["final_status"] = "UNFULFILLED"
             result["reason"] = "Finance check failed"
-            result["customer_response"] = {
-                "status": "REJECTED",
-                "reason": "We encountered an error processing your financial check. Please contact support.",
-                "quote_amount": None,
-            }
             self.results.append(result)
             return result
 
         # STAGE 4: Finalize Sale
         print("\n[STAGE 4] Finalizing Sale...")
-        sales_prompt = f"""
-Order {order_id} has been approved for ${quote_result['quote_amount']:.2f}
-
-Items: {json.dumps(requested_items)}
-
-Finalize this sale by recording the transaction and updating inventory.
-"""
+        sales_prompt = f"Finalize sale {order_id} for ${quote_amount:.2f}. Items: {json.dumps(requested_items)}"
         try:
             sales_response = self.sales_agent.run_sync(sales_prompt)
-            # Handle both direct dict and agent response object
-            if isinstance(sales_response, dict) and "order_finalized" in sales_response:
-                # Direct dict response from agent
-                order_finalized = sales_response.get("order_finalized", False)
-                sales_result = sales_response
-            else:
-                response_data = (
-                    sales_response.data
-                    if hasattr(sales_response, "data")
-                    else sales_response
-                )
-                sales_result = {"response": str(response_data), "success": True}
-                order_finalized = True
+            data = sales_response.data
+            
+            success = data.success
+            result["stages"]["sales"] = {"success": success, "explanation": data.explanation}
 
-            if order_finalized or sales_result.get("success", True):
-                result["stages"]["sales"] = sales_result
+            if success:
                 result["final_status"] = "FULFILLED"
-                result["quote_amount"] = quote_result["quote_amount"]
+                result["quote_amount"] = quote_amount
                 result["customer_response"] = {
                     "status": "APPROVED",
-                    "reason": f"Your order has been successfully processed. Total quote: ${quote_result['quote_amount']:.2f}",
-                    "quote_amount": quote_result["quote_amount"],
+                    "reason": f"Your order has been successfully processed. Total quote: ${quote_amount:.2f}",
+                    "quote_amount": quote_amount,
                     "delivery_note": "Your items will be shipped within 2-3 business days.",
                 }
                 print(f"[OK] Order confirmed and processed!")
             else:
-                result["stages"]["sales"] = sales_result
                 result["final_status"] = "UNFULFILLED"
                 result["reason"] = "Sales processing failed"
-                result["customer_response"] = {
-                    "status": "REJECTED",
-                    "reason": "We encountered an error finalizing your order. Please contact support.",
-                    "quote_amount": None,
-                }
+                result["customer_response"] = {"status": "REJECTED", "reason": "Error finalizing order."}
         except Exception as e:
             print(f"[WARN] Sales finalization error: {e}")
-            result["stages"]["sales"] = {"success": False, "error": str(e)}
             result["final_status"] = "UNFULFILLED"
             result["reason"] = "Sales processing failed"
-            result["customer_response"] = {
-                "status": "REJECTED",
-                "reason": "We encountered an error processing your order. Please try again later.",
-                "quote_amount": None,
-            }
 
         print(f"\n{'='*80}\n")
         self.results.append(result)
